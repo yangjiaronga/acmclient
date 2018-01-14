@@ -6,7 +6,7 @@ import requests
 
 import acmclient.const as Constants
 from .utils import (
-    check_dataId, check_group, HmacSHA1Encrypt,
+    check_data_id, check_group, hmacsha1_encrypt,
     get_md5_string
 )
 
@@ -19,6 +19,10 @@ class ServerListManager(object):
 
 
     def get_current_server_ip(self):
+        """通过endpoint获取ACM 服务器具体IP地址
+
+        :return:
+        """
         if not self._current_server_ip:
             self._current_server_ip = self.get_unit_address()
         return self._current_server_ip
@@ -65,7 +69,7 @@ class ACMClient(ServerListManager):
 
     _config_content = None
     _is_long_pulling = False
-    _isClose = False
+    _is_close = False
 
 
     def __init__(self, endpoint: str, namespace: str, accesskey: str, secretkey: str):
@@ -86,25 +90,25 @@ class ACMClient(ServerListManager):
         self._secretkey = secretkey
 
 
-    def getconfig(self, dataId: str, group: str, **kwargs) -> str:
+    def getconfig(self, data_id: str, group: str, **kwargs) -> str:
         """获取配置
 
-        :param dataId: id of the data
+        :param data_id: id of the data
         :param group: group name of the data
         :param kwargs:
         :return: value
         """
-        assert check_dataId(dataId), f'[dataId] only allow digital, ' \
-                                     f'letter and symbols in [ "_", "-", ".", ":" ], but got {dataId})'
+        assert check_data_id(data_id), f'[data_id] only allow digital, ' \
+                                     f'letter and symbols in [ "_", "-", ".", ":" ], but got {data_id})'
         assert check_group(group), f'[group] only allow digital, ' \
                                    f'letter and symbols in [ "_", "-", ".", ":" ], but got {group}'
-        self.dataId = dataId
+        self.data_id = data_id
         self.group = group
         headers = self._get_request_header()
         url = self.get_request_url(GET_CONFIG_SUFFIX)
         params = {
             "tenant": self.namespace,
-            "dataId": dataId,
+            "data_id": data_id,
             "group": group
         }
         try:
@@ -116,20 +120,31 @@ class ACMClient(ServerListManager):
             self._config_content = res.text
         return res.text
 
-    def subscribe(self, dataId: str, group: str, **kwargs) -> bool:
-        assert check_dataId(dataId), f'[dataId] only allow digital, ' \
-                                     f'letter and symbols in [ "_", "-", ".", ":" ], but got {dataId})'
+    def subscribe(self, data_id: str, group: str, **kwargs) -> bool:
+        """通过订阅配置创建长连接
+
+        :param data_id:
+        :param group:
+        :param kwargs:
+        :return:
+        """
+        assert check_data_id(data_id), f'[data_id] only allow digital, ' \
+                                     f'letter and symbols in [ "_", "-", ".", ":" ], but got {data_id})'
         assert check_group(group), f'[group] only allow digital, ' \
                                    f'letter and symbols in [ "_", "-", ".", ":" ], but got {group}'
-        self.dataId = dataId
+        self.data_id = data_id
         self.group = group
-        self._isClose = True
+        self._is_close = True
         self._start_long_pulling()
 
 
     def _check_server_config_info(self):
+        """检测ACM 服务器端配置是否进行过更改
+
+        :return:
+        """
         headers = self._get_request_header(longPullingTimeout="30000")
-        post_data = self.get_subscribe_post_data(self.dataId, self.group)
+        post_data = self.get_subscribe_post_data(self.data_id, self.group)
         url = self.get_request_url(SUBSCRIBE_SUBFFIX)
         try:
             res = requests.post(url, headers=headers, data=post_data, verify=False, timeout=40)
@@ -137,13 +152,17 @@ class ACMClient(ServerListManager):
             raise
         else:
             if res.text:
-                self.getconfig(self.dataId, self.group)
+                self.getconfig(self.data_id, self.group)
 
     def unsubscribe(self):
-        self._isClose = False
+        """取消订阅， 则不长轮询服务器端
+
+        :return:
+        """
+        self._is_close = False
 
     def _start_long_pulling(self):
-        """
+        """开始长轮询
 
         :return:
         """
@@ -151,7 +170,7 @@ class ACMClient(ServerListManager):
             return
 
         self._is_long_pulling = True
-        while self._isClose:
+        while self._is_close:
             try:
                 self._check_server_config_info()
             except:
@@ -161,24 +180,47 @@ class ACMClient(ServerListManager):
 
 
 
-    def get_subscribe_post_data(self, dataId: str, group: str) -> dict:
+    def get_subscribe_post_data(self, data_id: str, group: str) -> dict:
+        """构建订阅数据
+
+        :param data_id:
+        :param group:
+        :return:
+        """
         md5_content = get_md5_string(self._config_content)
-        data = Constants.WORD_SEPARATOR.join([dataId, group, md5_content, self.namespace])
+        data = Constants.WORD_SEPARATOR.join([data_id, group, md5_content, self.namespace])
         data += Constants.LINE_SEPARATOR
         return {"Probe-Modify-Request": data}
 
     def get_request_url(self, path, ssl=False):
+        """获取请求配置URL
+
+        :param path:
+        :param ssl:
+        :return:
+        """
         if ssl:
             return f"https://{self._current_server_ip}:443/diamond-server{path}"
         return f"http://{self._current_server_ip}:8080/diamond-server{path}"
 
 
     def get_spas_signature(self, group: str, millis: int) -> str:
+        """获取加密字符串
+
+        :param group:
+        :param millis:
+        :return:
+        """
         signStr = "+".join([self.namespace, group, str(millis)])
-        return HmacSHA1Encrypt(signStr, self._secretkey)
+        return hmacsha1_encrypt(signStr, self._secretkey)
 
 
     def _get_request_header(self, **kwargs):
+        """通用请求头设置
+
+        :param kwargs:
+        :return:
+        """
         if not self._current_server_ip:
             self._current_server_ip = self.get_current_server_ip()
         ts = int(round(time.time() * 1000))
