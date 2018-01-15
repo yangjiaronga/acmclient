@@ -90,7 +90,7 @@ class ACMClient(ServerListManager):
         self._secretkey = secretkey
 
 
-    def getconfig(self, data_id: str, group: str, **kwargs) -> str:
+    def getconfig(self, data_id: str, group="DEFAULT_GROUP", **kwargs) -> str:
         """获取配置
 
         :param data_id: id of the data
@@ -120,7 +120,7 @@ class ACMClient(ServerListManager):
             self._config_content = res.text
         return res.text
 
-    def subscribe(self, data_id: str, group: str, **kwargs) -> bool:
+    def subscribe(self, data_id: str, group="DEFAULT_GROUP", **kwargs) -> bool:
         """通过订阅配置创建长连接
 
         :param data_id:
