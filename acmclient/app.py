@@ -48,7 +48,7 @@ class ServerListManager(object):
 
         return random.choice(server_data)
 
-    def fetch_server_list(self, unit):
+    def fetch_server_list(self, unit=Constants.CURRENT_UNIT):
         res = requests.get(self.request_server_list_url(unit))
         if not res.text:
             raise ValueError("[diamond#ServerListManager] Diamond return empty hosts")
@@ -56,7 +56,7 @@ class ServerListManager(object):
         hosts.remove('')
         return hosts
 
-    def request_server_list_url(self, unit):
+    def request_server_list_url(self, unit=Constants.CURRENT_UNIT):
         if unit == Constants.CURRENT_UNIT:
             return f"http://{self.endpoint}:8080/diamond-server/diamond"
         else:

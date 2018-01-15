@@ -7,7 +7,14 @@ name = "pypi"
 
 [packages]
 
+requests = "*"
+pytest = "*"
 
 
 [dev-packages]
 
+
+
+[requires]
+
+python_version = "3.6"
