@@ -108,7 +108,7 @@ class ACMClient(ServerListManager):
         url = self.get_request_url(GET_CONFIG_SUFFIX)
         params = {
             "tenant": self.namespace,
-            "data_id": data_id,
+            "dataId": data_id,
             "group": group
         }
         try:

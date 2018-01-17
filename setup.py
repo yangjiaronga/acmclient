@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='acmclient',
-    version="0.1",
+    version="0.2",
     url='https://github.com/yangjiaronga/acmclient/',
     license='MIT',
     author='yangjiaronga',
