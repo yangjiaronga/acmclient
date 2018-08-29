@@ -22,7 +22,7 @@ def main():
     acm_client.getconfig(data_id="test", group="DEFAULT_GROUP")
     acm_client.subscribe(data_id="test", group="DEFAULT_GROUP")
 
-    acm_client.unsubscribe()  # 一半情况下不使用
+    acm_client.unsubscribe()  # 取消订阅， 则不长轮询服务器端。 一般情况下不使用
 
 if __name__ == "__main__":
     main()
