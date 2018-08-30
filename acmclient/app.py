@@ -118,7 +118,6 @@ class ACMClient(ServerListManager):
         except Exception as e:
             raise e
         else:
-            # print(res.text)
             self._config_content = res.text
         return res.text
 
