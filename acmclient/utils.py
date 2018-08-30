@@ -1,4 +1,5 @@
 # coding: utf-8
+
 import re
 import hmac
 import base64
@@ -8,13 +9,19 @@ from hashlib import sha1
 
 REG_VALID_CHAR = r"^[\w\.\-]+$"
 
+
 def check_param_isvalid(value: str) -> bool:
     """检查参数是否合法
+    re.match方法匹配成功返回一个匹配的对象，否则返回None。
 
     :param value: 参数值
     :return: Boolean
     """
-    return re.match(REG_VALID_CHAR, value)
+    res = re.match(REG_VALID_CHAR, value)
+    if res:
+        return True
+    return False
+
 
 def check_data_id(data_id):
     """检查DataId是否合法
@@ -24,6 +31,7 @@ def check_data_id(data_id):
     """
     return check_param_isvalid(data_id)
 
+
 def check_group(group):
     """
 
@@ -31,6 +39,7 @@ def check_group(group):
     :return:
     """
     return check_param_isvalid(group)
+
 
 def get_md5_string(value):
     """
@@ -44,11 +53,12 @@ def get_md5_string(value):
     m.update(value.encode('gbk'))
     return m.hexdigest()
 
+
 def hmacsha1_encrypt(encrypt_text: str, encrypt_key: str) -> str:
     """
 
-    :param encryptText:
-    :param encryptKey:
+    :param encrypt_text:
+    :param encrypt_key:
     :return:
     """
     encrypt_text = bytes(encrypt_text, 'UTF-8')
@@ -56,5 +66,3 @@ def hmacsha1_encrypt(encrypt_text: str, encrypt_key: str) -> str:
     my_sign = hmac.new(encrypt_key, encrypt_text, sha1).digest()
     my_sign = base64.b64encode(my_sign)
     return str(my_sign, 'UTF-8')
-
-

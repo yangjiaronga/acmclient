@@ -1,10 +1,12 @@
 # coding: utf-8
-import random
+
 import time
+import random
 import requests
 
+from typing import Optional
 
-import acmclient.const as Constants
+from acmclient import const as Constants
 from .utils import (
     check_data_id, check_group, hmacsha1_encrypt,
     get_md5_string
@@ -16,7 +18,6 @@ GET_CONFIG_SUFFIX = SUBSCRIBE_SUBFFIX = '/config.co'
 class ServerListManager(object):
     _server_list_cache = dict()
     _current_server_ip = None
-
 
     def get_current_server_ip(self):
         """通过endpoint获取ACM 服务器具体IP地址
@@ -30,7 +31,7 @@ class ServerListManager(object):
     def get_current_unit(self):
         pass
 
-    def get_unit_address(self, unit=Constants.CURRENT_UNIT) -> str:
+    def get_unit_address(self, unit=Constants.CURRENT_UNIT) -> Optional[str]:
         """获取某个单元的地址
 
         :return: address
@@ -71,14 +72,16 @@ class ACMClient(ServerListManager):
     _is_long_pulling = False
     _is_close = False
 
-
-    def __init__(self, endpoint: str, namespace: str, accesskey: str, secretkey: str):
-        """初始化阿里应用配置管理
+    def __init__(self, endpoint: str, namespace: str, accesskey: str,
+                 secretkey: str, data_id: str = "", group: str = "DEFAULT_GROUP"):
+        """ 初始化阿里配置管理
 
         :param endpoint:
         :param namespace:
         :param accesskey:
         :param secretkey:
+        :param data_id:
+        :param group:
         """
         assert endpoint, '[AcmClient] options.endpoint is required'
         assert namespace, '[AcmClient] options.namespace is required'
@@ -88,7 +91,8 @@ class ACMClient(ServerListManager):
         self.namespace = namespace
         self._accesskey = accesskey
         self._secretkey = secretkey
-
+        self.data_id = data_id
+        self.group = group
 
     def getconfig(self, data_id: str, group="DEFAULT_GROUP", **kwargs) -> str:
         """获取配置
@@ -98,10 +102,8 @@ class ACMClient(ServerListManager):
         :param kwargs:
         :return: value
         """
-        assert check_data_id(data_id), f'[data_id] only allow digital, ' \
-                                     f'letter and symbols in [ "_", "-", ".", ":" ], but got {data_id})'
-        assert check_group(group), f'[group] only allow digital, ' \
-                                   f'letter and symbols in [ "_", "-", ".", ":" ], but got {group}'
+        assert check_data_id(data_id), f'[data_id] only allow digital, letter and symbols in [ "_", "-", ".", ":" ], but got {data_id})'
+        assert check_group(group), f'[group] only allow digital, letter and symbols in [ "_", "-", ".", ":" ], but got {group}'
         self.data_id = data_id
         self.group = group
         headers = self._get_request_header()
@@ -113,10 +115,10 @@ class ACMClient(ServerListManager):
         }
         try:
             res = requests.get(url, headers=headers, params=params, verify=False)
-        except:
-            raise
+        except Exception as e:
+            raise e
         else:
-            print(res.text)
+            # print(res.text)
             self._config_content = res.text
         return res.text
 
@@ -136,7 +138,6 @@ class ACMClient(ServerListManager):
         self.group = group
         self._is_close = True
         self._start_long_pulling()
-
 
     def _check_server_config_info(self):
         """检测ACM 服务器端配置是否进行过更改
@@ -178,8 +179,6 @@ class ACMClient(ServerListManager):
 
         self._is_long_pulling = False
 
-
-
     def get_subscribe_post_data(self, data_id: str, group: str) -> dict:
         """构建订阅数据
 
@@ -203,7 +202,6 @@ class ACMClient(ServerListManager):
             return f"https://{self._current_server_ip}:443/diamond-server{path}"
         return f"http://{self._current_server_ip}:8080/diamond-server{path}"
 
-
     def get_spas_signature(self, group: str, millis: int) -> str:
         """获取加密字符串
 
@@ -213,7 +211,6 @@ class ACMClient(ServerListManager):
         """
         signStr = "+".join([self.namespace, group, str(millis)])
         return hmacsha1_encrypt(signStr, self._secretkey)
-
 
     def _get_request_header(self, **kwargs):
         """通用请求头设置

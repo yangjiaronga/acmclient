@@ -1,3 +1,4 @@
+# coding: utf-8
 
 DEFAULT_GROUP = 'DEFAULT_GROUP'
 DATAID_SERVER_LIST = 'com.taobao.diamond.serverlist'
